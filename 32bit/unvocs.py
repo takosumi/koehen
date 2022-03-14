@@ -1,3 +1,7 @@
+#(C) 2022 Takosumi
+#This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+#If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import pyworld as pw
 import numpy as np
 
@@ -54,74 +58,90 @@ def estimate_division_pos(a, i, u, e, o, sample_rate):
     spec_o = ave_spec(norm_o, sample_rate)
 
     #分割位置推定
-    j = 0
-    b = []
-    while ((spec_a[j] >= spec_a[j + 1]) or (spec_a[j + 1] < spec_a[j + 2])):
-        j = j + 1
-    k = j
-    l = 0
-    while not((spec_i[j] > spec_e[j]) and (spec_i[j + 1] < spec_e[j + 1])):
-        j = j + 1
-    l = l + j
-    j = k
-    while not((spec_i[j] > spec_o[j]) and (spec_i[j + 1] < spec_o[j + 1])):
-        j = j + 1
-    l = l + j
-    j = k
-    while not((spec_u[j] > spec_e[j]) and (spec_u[j + 1] < spec_e[j + 1])):
-        j = j + 1
-    l = l + j
-    j = k
-    while not((spec_u[j] > spec_o[j]) and (spec_u[j+1] < spec_o[j + 1])):
-        j = j + 1
-    b.append(int((l + j)/4))
-    j = b[0]
-    while (spec_o[j] > spec_a[j]) or (spec_e[j] > spec_a[j]):
-        j = j + 1
-    if j == b[0]:
-        j = j + 1
-    b.append(j)
-    while spec_a[j] >= spec_a[j + 1]:
-        j = j + 1
-    while (spec_a[j] < spec_a[j + 1]) or (spec_a[j + 1] >= spec_a[j + 2]):
-        j = j + 1
-    if j == b[1]:
-        j = j + 1
-    b.append(j)
-    while (spec_e[j] < spec_a[j]):
-        j = j + 1
-    if j == b[2]:
-        j = j + 1
-    b.append(j)
-    while (spec_i[j - 1] >= spec_i[j]) or (spec_i[j] < spec_i[j + 1]) or spec_i[j] != max(spec_a[j], spec_i[j], spec_u[j], spec_e[j], spec_o[j]):
-        j = j + 1
-    k = j
-    while (spec_e[k] < spec_i[k]):
-        k = k - 1
-    if k == b[3]:
-        k = k + 1
-    b.append(k)
-    k = j
-    while spec_i[j] == max(spec_a[j], spec_i[j], spec_u[j], spec_e[j], spec_o[j]) and ((spec_i[j - 1] <= spec_i[j]) or (spec_i[j] > spec_i[j + 1])):
-        j = j + 1
-    if j == b[4]:
-        j = j + 1
-    b.append(j)
-    while (max(spec_a[j], spec_i[j], spec_u[j], spec_e[j], spec_o[j]) >= max(spec_a[j + 1], spec_i[j + 1], spec_u[j + 1], spec_e[j + 1], spec_o[j + 1]) or max(spec_a[j + 1], spec_i[j + 1], spec_u[j + 1], spec_e[j + 1], spec_o[j + 1]) < max(spec_a[j + 2], spec_i[j + 2], spec_u[j + 2], spec_e[j + 2], spec_o[j + 2])):
-        j = j + 1
-    while (((spec_a[j] + spec_i[j] + spec_u[j] + spec_e[j] + spec_o[j]) <= (spec_a[j + 1] + spec_i[j + 1] + spec_u[j + 1] + spec_e[j + 1] + spec_o[j + 1])) or ((spec_a[j + 1] + spec_i[j + 1] + spec_u[j + 1] + spec_e[j + 1] + spec_o[j + 1]) > (spec_a[j + 2] + spec_i[j + 2] + spec_u[j + 2] + spec_e[j + 2] + spec_o[j + 2]))):
-        j = j + 1
-    if j == b[5]:
-        j = j + 1
-    b.append(j)
-    l = spec_a[j] + spec_i[j] + spec_u[j] + spec_e[j] + spec_o[j] 
-    for k in range(j + 1, len(spec_a)):
-        if l < spec_a[k] + spec_i[k] + spec_u[k] + spec_e[k] + spec_o[k]:
-            l = spec_a[k] + spec_i[k] + spec_u[k] + spec_e[k] + spec_o[k]
-            j = k
-    while (((spec_a[j] + spec_i[j] + spec_u[j] + spec_e[j] + spec_o[j]) <= (spec_a[j + 1] + spec_i[j + 1] + spec_u[j + 1] + spec_e[j + 1] + spec_o[j + 1])) or ((spec_a[j + 1] + spec_i[j + 1] + spec_u[j + 1] + spec_e[j + 1] + spec_o[j + 1]) > (spec_a[j + 2] + spec_i[j + 2] + spec_u[j + 2] + spec_e[j + 2] + spec_o[j + 2]))):
-        j = j + 1
-    b.append(j)
+    try:
+        j = 0
+        b = []
+        while ((spec_i[j] >= spec_i[j + 1]) or (spec_i[j + 1] < spec_i[j + 2])) and ((spec_u[j] >= spec_u[j + 1]) or (spec_u[j + 1] < spec_u[j + 2])):
+            j = j + 1
+        k = j
+        l = 0
+        while not((spec_i[j] > spec_e[j]) and (spec_i[j + 1] < spec_e[j + 1])):
+            j = j + 1
+        l = l + j
+        j = k
+        while not((spec_i[j] > spec_o[j]) and (spec_i[j + 1] < spec_o[j + 1])):
+            j = j + 1
+        l = l + j
+        j = k
+        while not((spec_u[j] > spec_e[j]) and (spec_u[j + 1] < spec_e[j + 1])):
+            j = j + 1
+        l = l + j
+        j = k
+        while not((spec_u[j] > spec_o[j]) and (spec_u[j+1] < spec_o[j + 1])):
+            j = j + 1
+        b.append(int((l + j)/4))
+        j = b[0]
+        while (spec_o[j] > spec_a[j]) or (spec_e[j] > spec_a[j]):
+            j = j + 1
+        if j == b[0]:
+            j = j + 1
+        b.append(j)
+        while spec_a[j] >= spec_a[j + 1]:
+            j = j + 1
+        while (spec_a[j] < spec_a[j + 1]) or (spec_a[j + 1] >= spec_a[j + 2]):
+            j = j + 1
+        if j == b[1]:
+            j = j + 1
+        b.append(j)
+        while (spec_e[j] < spec_a[j]):
+            j = j + 1
+        if j == b[2]:
+            j = j + 1
+        b.append(j)
+        while (spec_i[j - 1] >= spec_i[j]) or (spec_i[j] < spec_i[j + 1]) or spec_i[j] != max(spec_a[j], spec_i[j], spec_u[j], spec_e[j], spec_o[j]):
+            j = j + 1
+        k = j
+        while (spec_e[k] < spec_i[k]):
+            k = k - 1
+        if k == b[3]:
+            k = k + 1
+        b.append(k)
+        k = j
+        while spec_i[j] == max(spec_a[j], spec_i[j], spec_u[j], spec_e[j], spec_o[j]) and ((spec_i[j - 1] <= spec_i[j]) or (spec_i[j] > spec_i[j + 1])):
+            j = j + 1
+        if j == b[4]:
+            j = j + 1
+        b.append(j)
+        while (max(spec_a[j], spec_i[j], spec_u[j], spec_e[j], spec_o[j]) >= max(spec_a[j + 1], spec_i[j + 1], spec_u[j + 1], spec_e[j + 1], spec_o[j + 1]) or max(spec_a[j + 1], spec_i[j + 1], spec_u[j + 1], spec_e[j + 1], spec_o[j + 1]) < max(spec_a[j + 2], spec_i[j + 2], spec_u[j + 2], spec_e[j + 2], spec_o[j + 2])):
+            j = j + 1
+        while (((spec_a[j] + spec_i[j] + spec_u[j] + spec_e[j] + spec_o[j]) <= (spec_a[j + 1] + spec_i[j + 1] + spec_u[j + 1] + spec_e[j + 1] + spec_o[j + 1])) or ((spec_a[j + 1] + spec_i[j + 1] + spec_u[j + 1] + spec_e[j + 1] + spec_o[j + 1]) > (spec_a[j + 2] + spec_i[j + 2] + spec_u[j + 2] + spec_e[j + 2] + spec_o[j + 2]))):
+            j = j + 1
+        if j == b[5]:
+            j = j + 1
+        b.append(j)
+        l = spec_a[j] + spec_i[j] + spec_u[j] + spec_e[j] + spec_o[j] 
+        for k in range(j + 1, len(spec_a)):
+            if l < spec_a[k] + spec_i[k] + spec_u[k] + spec_e[k] + spec_o[k]:
+                l = spec_a[k] + spec_i[k] + spec_u[k] + spec_e[k] + spec_o[k]
+                j = k
+        while (((spec_a[j] + spec_i[j] + spec_u[j] + spec_e[j] + spec_o[j]) <= (spec_a[j + 1] + spec_i[j + 1] + spec_u[j + 1] + spec_e[j + 1] + spec_o[j + 1])) or ((spec_a[j + 1] + spec_i[j + 1] + spec_u[j + 1] + spec_e[j + 1] + spec_o[j + 1]) > (spec_a[j + 2] + spec_i[j + 2] + spec_u[j + 2] + spec_e[j + 2] + spec_o[j + 2]))):
+            j = j + 1
+        b.append(j)
+    except IndexError:
+        for j in range(8 - len(b)):
+            b.append(512)
+    finally:
+        k = 8
+        for j in range(8):
+            if b[j] >= 512:
+                k = j
+                break
+        if k < 8:
+            for j in range(8 - k):
+                b[7 - j] = 512 - j
+            for j in range(k):
+                if b[k - 1 - j] > b[k - j]:
+                    b[k - 1 - j] = b[k - j] - 1
 
     a = average_calculate(b, spec_a)
 
