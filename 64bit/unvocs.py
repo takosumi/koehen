@@ -230,21 +230,10 @@ def voice_convert(s1, a, b1, s2, b2, sample_rate, r):
         for j in range(b33, b34):
             new_spec[j] = (a17/a[7]) * s2[j]
         for j in range (b34, b35):
-            new_spec[j] = incline(a17/a[7], (a18/a[8]) * 0.2, j, b34, b35) * s2[j]
+            new_spec[j] = incline(a17/a[7], (a18/a[8]) * r, j, b34, b35) * s2[j]
         for j in range(b35, len(s2)):
-            new_spec[j] = (a18/a[8] * 0.2) * s2[j]
+            new_spec[j] = (a18/a[8] * r) * s2[j]
         spec_mat2.append(new_spec)
     spec_mat = np.array(spec_mat2) * (rms(a)/rms(s2))
-
-    aperiod_mat2 = []
-    for i in range (len(aperiod_mat)):
-        new_aperiod = [1.0] * len(spec_mat[0])
-        if not(np.allclose(spec_mat[i],new_spec)):
-            for j in range (192):
-                new_aperiod[j] = aperiod_mat[i][j] * (1 - r * (j/192))
-            for j in range (321):
-                new_aperiod[192 + j] = aperiod_mat[i][192 + j] * (1 - r + r * (j/320))
-        aperiod_mat2.append(new_aperiod)
-    aperiod_mat = np.array(aperiod_mat2)
 
     return spec_mat, aperiod_mat, f0
