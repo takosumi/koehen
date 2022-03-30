@@ -4,21 +4,19 @@
 
 import pyworld as pw
 import numpy as np
+import time
 
 #処理用関数の定義
 #所定の範囲を切り出して平均
 def average(x, begin, end):
     if begin != end:
-        c = x[begin:end]
-        d = sum(c)/(end - begin)
+        return sum(x[begin:end])/(end - begin)
     else:
-        d = x[begin]
-    return d
+        return x[begin]
 
 #線型補間
-def incline(c, d, index, begin, end):
-    e = (c * (end - index) + d * (index - begin))/(end - begin)
-    return e
+def incline(c, d, begin, end):
+    return np.transpose(np.array([(c * (end - begin - j) + d * j)/(end - begin) for j in range(end - begin)]))
 
 #配列の最初と最後の0を落とす
 def cut(a):
@@ -32,10 +30,7 @@ def cut(a):
 
 #配列の2乗平均を求める
 def rms(a):
-    power = 0
-    for i in range(len(a)):
-        power = power + (a[i]) ** 2
-    return (power/len(a)) ** 0.5
+    return (sum(np.square(a))/len(a)) ** 0.5
 
 def ave_spec(x, s):
     _, spec_mat, _ = pw.wav2world(x, s)
@@ -129,16 +124,16 @@ def estimate_division_pos(a, i, u, e, o, sample_rate):
         b.append(j)
     except IndexError:
         for j in range(8 - len(b)):
-            b.append(512)
+            b.append(len(spec_a))
     finally:
         k = 8
         for j in range(8):
-            if b[j] >= 512:
+            if b[j] >= len(spec_a):
                 k = j
                 break
         if k < 8:
             for j in range(8 - k):
-                b[7 - j] = 512 - j
+                b[7 - j] = len(spec_a) - j
             for j in range(k):
                 if b[k - 1 - j] > b[k - j]:
                     b[k - 1 - j] = b[k - j] - 1
@@ -148,17 +143,17 @@ def estimate_division_pos(a, i, u, e, o, sample_rate):
     return b, a, spec_a, spec_i, spec_u, spec_e, spec_o
 
 #平均値を計算
-def average_calculate(b, spec_a):
+def average_calculate(b, s):
     a = []
-    a.append(average(spec_a, 0, b[0]))
-    a.append(average(spec_a, b[0], b[1]))
-    a.append(average(spec_a, b[1], b[2]))
-    a.append(average(spec_a, b[2], b[3]))
-    a.append(average(spec_a, b[3], b[4]))
-    a.append(average(spec_a, b[4], b[5]))
-    a.append(average(spec_a, b[5], b[6]))
-    a.append(average(spec_a, b[6], b[7]))
-    a.append(average(spec_a, b[7], len(spec_a)))
+    a.append(average(s, 0, b[0]))
+    a.append(average(s, b[0], b[1]))
+    a.append(average(s, b[1], b[2]))
+    a.append(average(s, b[2], b[3]))
+    a.append(average(s, b[3], b[4]))
+    a.append(average(s, b[4], b[5]))
+    a.append(average(s, b[5], b[6]))
+    a.append(average(s, b[6], b[7]))
+    a.append(average(s, b[7], len(s)))
     return a
 
 #声質変換
@@ -187,53 +182,31 @@ def voice_convert(s1, a, b1, s2, b2, sample_rate, r):
     b35 = b2[7] + l
 
     f0, spec_mat, aperiod_mat = pw.wav2world(s1, sample_rate)
-    spec_mat2 = []
-    for i in range(len(spec_mat)):
-        new_spec = [0] * len(spec_mat[0])
-        a10 = average(spec_mat[i], 0, b1[0])
-        a11 = average(spec_mat[i], b1[0], b1[1])
-        a12 = average(spec_mat[i], b1[1], b1[2])
-        a13 = average(spec_mat[i], b1[2], b1[3])
-        a14 = average(spec_mat[i], b1[3], b1[4])
-        a15 = average(spec_mat[i], b1[4], b1[5])
-        a16 = average(spec_mat[i], b1[5], b1[6])
-        a17 = average(spec_mat[i], b1[6], b1[7])
-        a18 = average(spec_mat[i], b1[7], len(spec_mat[i]))
-        for j in range (0, b20):
-            new_spec[j] = (a10/a[0]) * s2[j]
-        for j in range (b20, b21):
-            new_spec[j] = incline(a10/a[0], a11/a[1], j, b20, b21) * s2[j]
-        for j in range (b21, b22):
-            new_spec[j] = (a11/a[1]) * s2[j]
-        for j in range (b22, b23):
-            new_spec[j] = incline(a11/a[1], a12/a[2], j, b22, b23) * s2[j]
-        for j in range (b23, b24):
-            new_spec[j] = (a12/a[2]) * s2[j]
-        for j in range (b24, b25):
-            new_spec[j] = incline(a12/a[2], a13/a[3], j, b24, b25) * s2[j]
-        for j in range (b25, b26):
-            new_spec[j] = (a13/a[3]) * s2[j]
-        for j in range (b26, b27):
-            new_spec[j] = incline(a13/a[3], a14/a[4], j, b26, b27) * s2[j]
-        for j in range (b27, b28):
-            new_spec[j] = (a14/a[4]) * s2[j]
-        for j in range (b28, b29):
-            new_spec[j] = incline(a14/a[4], a15/a[5], j, b28, b29) * s2[j]
-        for j in range(b29, b30):
-            new_spec[j] = (a15/a[5]) * s2[j]
-        for j in range (b30, b31):
-            new_spec[j] = incline(a15/a[5], a16/a[6], j, b30, b31) * s2[j]
-        for j in range(b31, b32):
-            new_spec[j] = (a16/a[6]) * s2[j]
-        for j in range (b32, b33):
-            new_spec[j] = incline(a16/a[6], a17/a[7], j, b32, b33) * s2[j]
-        for j in range(b33, b34):
-            new_spec[j] = (a17/a[7]) * s2[j]
-        for j in range (b34, b35):
-            new_spec[j] = incline(a17/a[7], (a18/a[8]) * r, j, b34, b35) * s2[j]
-        for j in range(b35, len(s2)):
-            new_spec[j] = (a18/a[8] * r) * s2[j]
-        spec_mat2.append(new_spec)
-    spec_mat = np.array(spec_mat2) * (rms(a)/rms(s2))
-
-    return spec_mat, aperiod_mat, f0
+    k = len(spec_mat)
+    a10 = average(np.transpose(spec_mat), 0, b1[0])
+    a11 = average(np.transpose(spec_mat), b1[0], b1[1])
+    a12 = average(np.transpose(spec_mat), b1[1], b1[2])
+    a13 = average(np.transpose(spec_mat), b1[2], b1[3])
+    a14 = average(np.transpose(spec_mat), b1[3], b1[4])
+    a15 = average(np.transpose(spec_mat), b1[4], b1[5])
+    a16 = average(np.transpose(spec_mat), b1[5], b1[6])
+    a17 = average(np.transpose(spec_mat), b1[6], b1[7])
+    a18 = average(np.transpose(spec_mat), b1[7], len(spec_mat[0]))
+    spec_mat[:, 0:b20] = np.transpose((a10/a[0]) * np.transpose(np.tile(s2[0:b20], (k, 1))))
+    spec_mat[:, b20:b21] = incline(a10/a[0], a11/a[1], b20, b21) * s2[b20:b21]
+    spec_mat[:, b21:b22] = np.transpose((a11/a[1]) * np.transpose(np.tile(s2[b21:b22], (k, 1))))
+    spec_mat[:, b22:b23] = incline(a11/a[1], a12/a[2], b22, b23) * s2[b22:b23]
+    spec_mat[:, b23:b24] = np.transpose((a12/a[2]) * np.transpose(np.tile(s2[b23:b24], (k, 1))))
+    spec_mat[:, b24:b25] = incline(a12/a[2], a13/a[3], b24, b25) * s2[b24:b25]
+    spec_mat[:, b25:b26] = np.transpose((a13/a[3]) * np.transpose(np.tile(s2[b25:b26], (k, 1))))
+    spec_mat[:, b26:b27] = incline(a13/a[3], a14/a[4], b26, b27) * s2[b26:b27]
+    spec_mat[:, b27:b28] = np.transpose((a14/a[4]) * np.transpose(np.tile(s2[b27:b28], (k, 1))))
+    spec_mat[:, b28:b29] = incline(a14/a[4], a15/a[5], b28, b29) * s2[b28:b29]
+    spec_mat[:, b29:b30] = np.transpose((a15/a[5]) * np.transpose(np.tile(s2[b29:b30], (k, 1))))
+    spec_mat[:, b30:b31] = incline(a15/a[5], a16/a[6], b30, b31) * s2[b30:b31]
+    spec_mat[:, b31:b32] = np.transpose((a16/a[6]) * np.transpose(np.tile(s2[b31:b32], (k, 1))))
+    spec_mat[:, b32:b33] = incline(a16/a[6], a17/a[7], b32, b33) * s2[b32:b33]
+    spec_mat[:, b33:b34] = np.transpose((a17/a[7]) * np.transpose(np.tile(s2[b33:b34], (k, 1))))
+    spec_mat[:, b34:b35] = incline(a17/a[7], a18/a[8] * r, b34, b35) * s2[b34:b35]
+    spec_mat[:, b35:len(s2)] = np.transpose((a18/a[8]) * r * np.transpose(np.tile(s2[b35:len(s2)], (k, 1))))
+    return spec_mat * (rms(a)/rms(s2)), aperiod_mat, f0
